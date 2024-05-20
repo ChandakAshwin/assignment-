@@ -1,0 +1,73 @@
+// src/main/java/com/example/demo/controller/UserController.java
+package com.example.demo.controller;
+
+import com.example.demo.entity.User;
+import com.example.demo.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api")
+public class UserController {
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/create_user")
+    public String createUser(@RequestBody User user) {
+        userService.createUser(user);
+        return "User created successfully";
+    }
+
+    @PostMapping("/get_users")
+    public List<User> getUsers(@RequestBody(required = false) UUID userId, @RequestBody(required = false) String mobNum, @RequestBody(required = false) UUID managerId) {
+        if (userId != null) {
+            Optional<User> user = userService.getUserById(userId);
+            return user.map(Collections::singletonList).orElse(Collections.emptyList());
+        } else if (mobNum != null) {
+            Optional<User> user = userService.getUserByMobNum(mobNum);
+            return user.map(Collections::singletonList).orElse(Collections.emptyList());
+        } else if (managerId != null) {
+            return userService.getUsersByManagerId(managerId);
+        }
+        return userService.getUsers();
+    }
+
+    @PostMapping("/delete_user")
+    public String deleteUser(@RequestBody UUID userId, @RequestBody(required = false) String mobNum) {
+        if (userId != null) {
+            userService.deleteUser(userId);
+        } else if (mobNum != null) {
+            Optional<User> user = userService.getUserByMobNum(mobNum);
+            user.ifPresent(value -> userService.deleteUser(value.getUserId()));
+        }
+        return "User deleted successfully";
+    }
+
+    @PostMapping("/update_user")
+    public String updateUser(@RequestBody List<UUID> userIds, @RequestBody User updateData) {
+        for (UUID userId : userIds) {
+            Optional<User> userOpt = userService.getUserById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                if (updateData.getFullName() != null) {
+                    user.setFullName(updateData.getFullName());
+                }
+                if (updateData.getMobNum() != null) {
+                    user.setMobNum(updateData.getMobNum());
+                }
+                if (updateData.getPanNum() != null) {
+                    user.setPanNum(updateData.getPanNum());
+                }
+                if (updateData.getManagerId() != null) {
+                    user.setManagerId(updateData.getManagerId());
+                }
+                userService.updateUser(user);
+            }
+        }
+        return "User(s) updated successfully";
+    }
+}

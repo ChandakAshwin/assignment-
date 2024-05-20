@@ -1,0 +1,29 @@
+// src/main/java/com/example/demo/entity/User.java
+package com.example.demo.entity;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue
+    private UUID userId;
+    
+    private String fullName;
+    
+    private String mobNum;
+    
+    private String panNum;
+    
+    private UUID managerId;
+    
+    private LocalDateTime createdAt;
+    
+    private LocalDateTime updatedAt;
+    
+    private boolean isActive = true;
+
+    // Getters and Setters
+}
