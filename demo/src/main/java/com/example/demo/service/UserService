@@ -1,0 +1,119 @@
+package com.example.usermanagement.service;
+
+import com.example.usermanagement.model.Manager;
+import com.example.usermanagement.model.User;
+import com.example.usermanagement.repository.ManagerRepository;
+import com.example.usermanagement.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+public class UserService {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ManagerRepository managerRepository;
+
+    public User createUser(User user) throws Exception {
+        // Validate and adjust mob_num
+        String mobNum = user.getMobNum().replaceAll("[^0-9]", "");
+        if (mobNum.length() == 10) {
+            user.setMobNum(mobNum);
+        } else if (mobNum.length() == 12 && mobNum.startsWith("91")) {
+            user.setMobNum(mobNum.substring(2));
+        } else {
+            throw new Exception("Invalid mobile number");
+        }
+
+        // Validate and adjust pan_num
+        user.setPanNum(user.getPanNum().toUpperCase());
+
+        // Validate manager_id if provided
+        if (user.getManagerId() != null) {
+            Optional<Manager> manager = managerRepository.findById(user.getManagerId());
+            if (!manager.isPresent() || !manager.get().isActive()) {
+                throw new Exception("Invalid manager ID");
+            }
+        }
+
+        user.setCreatedAt(LocalDateTime.now().toString());
+        return userRepository.save(user);
+    }
+
+    public List<User> getUsers() {
+        return userRepository.findAll();
+    }
+
+    public Optional<User> getUserById(UUID userId) {
+        return userRepository.findById(userId);
+    }
+
+    public Optional<User> getUserByMobNum(String mobNum) {
+        return userRepository.findByMobNum(mobNum);
+    }
+
+    public List<User> getUsersByManagerId(UUID managerId) {
+        return userRepository.findByManagerId(managerId);
+    }
+
+    public void deleteUser(UUID userId) throws Exception {
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
+        } else {
+            throw new Exception("User not found");
+        }
+    }
+
+    public void deleteUserByMobNum(String mobNum) throws Exception {
+        Optional<User> user = userRepository.findByMobNum(mobNum);
+        if (user.isPresent()) {
+            userRepository.delete(user.get());
+        } else {
+            throw new Exception("User not found");
+        }
+    }
+
+    public User updateUser(UUID userId, User updatedUser) throws Exception {
+        Optional<User> existingUser = userRepository.findById(userId);
+        if (!existingUser.isPresent()) {
+            throw new Exception("User not found");
+        }
+
+        User user = existingUser.get();
+        if (updatedUser.getFullName() != null) {
+            user.setFullName(updatedUser.getFullName());
+        }
+
+        if (updatedUser.getMobNum() != null) {
+            String mobNum = updatedUser.getMobNum().replaceAll("[^0-9]", "");
+            if (mobNum.length() == 10) {
+                user.setMobNum(mobNum);
+            } else if (mobNum.length() == 12 && mobNum.startsWith("91")) {
+                user.setMobNum(mobNum.substring(2));
+            } else {
+                throw new Exception("Invalid mobile number");
+            }
+        }
+
+        if (updatedUser.getPanNum() != null) {
+            user.setPanNum(updatedUser.getPanNum().toUpperCase());
+        }
+
+        if (updatedUser.getManagerId() != null) {
+            Optional<Manager> manager = managerRepository.findById(updatedUser.getManagerId());
+            if (!manager.isPresent() || !manager.get().isActive()) {
+                throw new Exception("Invalid manager ID");
+            }
+            user.setManagerId(updatedUser.getManagerId());
+        }
+
+        user.setUpdatedAt(LocalDateTime.now().toString());
+        return userRepository.save(user);
+    }
+}

@@ -1,0 +1,59 @@
+package com.example.usermanagement.controller;
+
+import com.example.usermanagement.model.User;
+import com.example.usermanagement.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api")
+public class UserController {
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/create_user")
+    public User createUser(@RequestBody User user) throws Exception {
+        return userService.createUser(user);
+    }
+
+    @PostMapping("/get_users")
+    public List<User> getUsers() {
+        return userService.getUsers();
+    }
+
+    @PostMapping("/get_user")
+    public Optional<User> getUser(@RequestParam Optional<UUID> userId, @RequestParam Optional<String> mobNum) {
+        if (userId.isPresent()) {
+            return userService.getUserById(userId.get());
+        } else if (mobNum.isPresent()) {
+            return userService.getUserByMobNum(mobNum.get());
+        }
+        return Optional.empty();
+    }
+
+    @PostMapping("/get_users_by_manager")
+    public List<User> getUsersByManager(@RequestParam UUID managerId) {
+        return userService.getUsersByManagerId(managerId);
+    }
+
+    @PostMapping("/delete_user")
+    public String deleteUser(@RequestParam Optional<UUID> userId, @RequestParam Optional<String> mobNum) throws Exception {
+        if (userId.isPresent()) {
+            userService.deleteUser(userId.get());
+        } else if (mobNum.isPresent()) {
+            userService.deleteUserByMobNum(mobNum.get());
+        } else {
+            throw new Exception("User ID or Mobile Number is required");
+        }
+        return "User deleted successfully";
+    }
+
+    @PostMapping("/update_user")
+    public User updateUser(@RequestParam UUID userId, @RequestBody User user) throws Exception {
+        return userService.updateUser(userId, user);
+    }
+}
